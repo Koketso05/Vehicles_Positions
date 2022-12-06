@@ -16,6 +16,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Linq;
 using System.Collections;
 using System.Reflection;
+using System.Collections.ObjectModel;
 
 var coordinates = CoordinateCollection.CoordinateList;
 
@@ -24,9 +25,8 @@ TraceVehiclesByLocation(coordinates);
 
 void TraceVehiclesByLocation(List<Coordinate> coordinates)
 {
-   string filePath = @"..\..\..\Data\VehiclePositions.dat";
-    var file_lines = new ArrayList();
-
+    string filePath = @"..\..\..\Data\VehiclePositions.dat";
+    
     // intialize stopwatch
     var file_reader_watch = new Stopwatch();
     file_reader_watch.Start();
@@ -37,22 +37,23 @@ void TraceVehiclesByLocation(List<Coordinate> coordinates)
     Console.WriteLine($"Data file read execution time: {file_reader_watch.ElapsedMilliseconds} ms");
 
     var close_position_calculate_watch = new Stopwatch();
-    close_position_calculate_watch.Start();
-    file_lines.AddRange(f_lines);
-    foreach (var coordinate in coordinates)
-    {
-        var lat = coordinate.Latitude.ToString().Substring(0, 4);
-        var lng = coordinate.Longitude.ToString().Substring(0, 4);
+    close_position_calculate_watch.Start();    
+    var fileLines = f_lines.ToList<string>();
 
-        foreach (string line in file_lines)
+    Parallel.ForEach(coordinates, coordinate =>
+    {        
+        var lat = coordinate.Latitude.ToString().Substring(0, 3);
+        var lng = coordinate.Longitude.ToString().Substring(0, 3);     
+
+        Parallel.ForEach(fileLines, line =>
         {
             if (line.Contains(lat) && line.Contains(lng))
             {
-                // TODO: You can increment a count to track number of items found
-                Console.WriteLine("Vehicle identified");
+                Console.WriteLine("Nearest vehicle identified");
             }
-        }
-    }    
+        });
+    });
+
     Console.WriteLine($"Closest position calculation execution time: {close_position_calculate_watch.ElapsedMilliseconds} ms");
     close_position_calculate_watch.Stop();
 
